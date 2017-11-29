@@ -1,0 +1,2 @@
+ceilometer/api/app.wsgi /usr/share/ceilometer
+usr/lib/python*/dist-packages/*

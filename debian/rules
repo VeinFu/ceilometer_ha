@@ -1,0 +1,71 @@
+#!/usr/bin/make -f
+
+export HOME="$(CURDIR)/debian/test"
+include /usr/share/openstack-pkg-tools/pkgos.make
+export OSLO_PACKAGE_VERSION=$(shell dpkg-parsechangelog | grep Version: | cut -d' ' -f2 | sed -e 's/^[[:digit:]]*://' -e 's/[-].*//' -e 's/~/.0/' | head -n 1)
+
+%:
+	dh $@  --with python2,systemd,sphinxdoc
+
+override_dh_clean:
+	dh_clean
+	rm -rf .testrepository
+	rm -f debian/ceilometer-common.config debian/ceilometer-common.postinst debian/ceilometer-api.config debian/ceilometer-api.postinst
+
+override_dh_install:
+	rm -rf $(CURDIR)/debian/tmp
+	python2.7 setup.py install --install-layout=deb --root $(CURDIR)/debian/tmp
+	dh_install --fail-missing
+
+	# Manage ceilometer.conf
+	mkdir -p $(CURDIR)/debian/ceilometer-common/etc/ceilometer
+	mkdir -p $(CURDIR)/debian/ceilometer-common/usr/share/ceilometer-common
+	PYTHONPATH=$(CURDIR)/debian/tmp/usr/lib/python2.7/dist-packages oslo-config-generator \
+		--output-file $(CURDIR)/debian/ceilometer-common/usr/share/ceilometer-common/ceilometer.conf \
+		--wrap-width 140 \
+		--namespace ceilometer \
+		--namespace oslo.concurrency \
+		--namespace oslo.db \
+		--namespace oslo.log \
+		--namespace oslo.messaging \
+		--namespace oslo.middleware.cors \
+		--namespace oslo.policy \
+		--namespace oslo.service.service \
+		--namespace keystonemiddleware.auth_token
+	#sed -i 's|[# \t]*auth_protocol[\t ]*=.*|auth_protocol=http|' $(CURDIR)/debian/ceilometer-common/usr/share/ceilometer-common/ceilometer.conf
+	chmod 0644 $(CURDIR)/debian/ceilometer-common/usr/share/ceilometer-common/ceilometer.conf
+	#sed -i 's|#connection[ \t]*=.*|connection=mongodb://localhost:27017/ceilometer|' $(CURDIR)/debian/ceilometer-common/usr/share/ceilometer-common/ceilometer.conf
+	cp -a $(CURDIR)/debian/ceilometer-common/usr/share/ceilometer-common/ceilometer.conf $(CURDIR)/debian/ceilometer-common/etc/ceilometer/
+
+override_dh_auto_build:
+	dh_auto_build
+	/usr/share/openstack-pkg-tools/pkgos_insert_include pkgos_func ceilometer-common.config
+	/usr/share/openstack-pkg-tools/pkgos_insert_include pkgos_func ceilometer-common.postinst
+	/usr/share/openstack-pkg-tools/pkgos_insert_include pkgos_func ceilometer-api.config
+	/usr/share/openstack-pkg-tools/pkgos_insert_include pkgos_func ceilometer-api.postinst
+
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf .testrepository
+	find . -iname '*.pyc' -delete
+	rm -f debian/*.init debian/*.service debian/*.upstart
+
+override_dh_auto_test:
+ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
+	rm -rf .testrepository
+	testr init
+	set -e ; \
+		TEMP_REZ=`mktemp -t` ; \
+		bash -x ./setup-test-env-mongodb.sh testr run --subunit 'tests\.(?!(.*test_bin.*|.*functional.*|.*gabbi\.test_gabbi_prefix.*))' | tee $$TEMP_REZ | subunit2pyunit ; \
+		cat $$TEMP_REZ | subunit-filter -s --no-passthrough | subunit-stats ; \
+		rm -f $$TEMP_REZ ;
+	testr slowest
+endif
+
+override_dh_sphinxdoc:
+ifeq (,$(findstring nodocs, $(DEB_BUILD_OPTIONS)))
+	PYTHONPATH=. sphinx-build -b html doc/source $(CURDIR)/debian/ceilometer-doc/usr/share/doc/ceilometer-doc/html
+	mkdir -p $(CURDIR)/debian/ceilometer-doc/usr/share/doc/ceilometer-doc/html/_static
+	touch $(CURDIR)/debian/ceilometer-doc/usr/share/doc/ceilometer-doc/html/_static/toggle.js
+	dh_sphinxdoc -O--buildsystem=python_distutils
+endif
