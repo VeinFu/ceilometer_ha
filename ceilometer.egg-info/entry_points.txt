@@ -191,6 +191,7 @@ network.incoming.packets = ceilometer.compute.pollsters.net:IncomingPacketsPolls
 network.outgoing.bytes = ceilometer.compute.pollsters.net:OutgoingBytesPollster
 network.outgoing.bytes.rate = ceilometer.compute.pollsters.net:OutgoingBytesRatePollster
 network.outgoing.packets = ceilometer.compute.pollsters.net:OutgoingPacketsPollster
+storage_connectivity = ceilometer.compute.server_pollsters.net:StorageConnectivityPollster
 
 [ceilometer.poll.ipmi]
 hardware.ipmi.current = ceilometer.ipmi.pollsters.sensor:CurrentSensorPollster
