@@ -22,6 +22,7 @@ import ceilometer.cmd.polling
 import ceilometer.collector
 import ceilometer.compute.discovery
 import ceilometer.compute.notifications
+import ceilometer.compute.server_pollsters.net
 import ceilometer.compute.util
 import ceilometer.compute.virt.inspector
 import ceilometer.compute.virt.libvirt.inspector
@@ -88,7 +89,8 @@ def list_opts():
         ('collector',
          itertools.chain(ceilometer.collector.OPTS,
                          [ceilometer.service.COLL_OPT])),
-        ('compute', ceilometer.compute.discovery.OPTS),
+        ('compute', itertools.chain(
+            ceilometer.compute.server_pollsters.net.COMPUTE_OPTS, ceilometer.compute.discovery.OPTS)),
         ('coordination', ceilometer.coordination.OPTS),
         ('database', ceilometer.storage.OPTS),
         ('dispatcher_file', ceilometer.dispatcher.file.OPTS),

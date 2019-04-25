@@ -1,6 +1,8 @@
 /usr/bin/ceilometer-dbsync
 /usr/bin/ceilometer-expirer
 /usr/bin/ceilometer-polling
+/usr/bin/ceilometer-polling-ha
+/usr/bin/ceilometer-collector-ha
 /usr/bin/ceilometer-rootwrap
 /usr/bin/ceilometer-send-sample
 etc/ceilometer/api_paste.ini			/etc/ceilometer

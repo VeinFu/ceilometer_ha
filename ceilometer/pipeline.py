@@ -386,8 +386,7 @@ class Sink(object):
                 # Support old format without URL
                 p = p + "://"
             try:
-                self.publishers.append(publisher.get_publisher(p,
-                                                               self.NAMESPACE))
+                self.publishers.append(publisher.get_publisher(p))
             except Exception:
                 LOG.exception(_("Unable to load publisher %s"), p)
 

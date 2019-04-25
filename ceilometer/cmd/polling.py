@@ -18,7 +18,7 @@ from oslo_config import cfg
 from oslo_log import log
 from oslo_service import service as os_service
 
-from ceilometer.agent import manager
+from ceilometer.agent import manager, manager_ha
 from ceilometer.i18n import _LW
 from ceilometer import service
 
@@ -82,3 +82,9 @@ def main():
     service.prepare_service()
     os_service.launch(CONF, manager.AgentManager(CONF.polling_namespaces,
                                                  CONF.pollster_list)).wait()
+
+
+def main_ha():
+    service.prepare_service()
+    os_service.launch(CONF, manager_ha.AgentManager(CONF.polling_namespaces,
+                                                    CONF.pollster_list)).wait()

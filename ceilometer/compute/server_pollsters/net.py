@@ -39,21 +39,25 @@ class StorageConnectivityPollster(server_pollsters.ServerPollster):
 
     def get_samples(self, manager, cache, resources):
         for host in resources:
-            storage_server_addresses = CONF.storage_server_address
+            storage_server_addresses = CONF.compute.storage_server_address
             if ',' in storage_server_addresses:
                 storage_server_addresses = storage_server_addresses.split(',')
             else:
                 storage_server_addresses = [storage_server_addresses]
 
             result = any(
-                [check_ping_status(ip, CONF.ping_count, CONF.ping_loss_ratio) for ip in storage_server_addresses])
+                [check_ping_status(ip, CONF.compute.ping_count, CONF.compute.ping_loss_ratio) for ip in storage_server_addresses])
             connectivity_status = 1 if result else 0
 
+            host_name = commands.getoutput('hostname').strip()
             yield sample.Sample(
                 name='storage_connectivity',
                 type=sample.TYPE_GAUGE,
                 unit='',
                 volume=connectivity_status,
-                resource_id=host,
+                resource_id=host_name,
+                user_id=None,
+                project_id=None,
                 timestamp=timeutils.utcnow().isoformat(),
+                resource_metadata={'node': host_name},
             )

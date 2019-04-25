@@ -71,36 +71,36 @@ class CollectorService(os_service.Service):
 
         if cfg.CONF.collector.udp_address:
             self.tg.add_thread(self.start_udp)
+        else:
+            transport = messaging.get_transport(optional=True)
+            if transport:
+                if list(self.meter_manager):
+                    sample_target = oslo_messaging.Target(
+                        topic=cfg.CONF.publisher_notifier.metering_topic)
+                    self.sample_listener = (
+                        messaging.get_batch_notification_listener(
+                            transport, [sample_target],
+                            [SampleEndpoint(self.meter_manager)],
+                            allow_requeue=True,
+                            batch_size=cfg.CONF.collector.batch_size,
+                            batch_timeout=cfg.CONF.collector.batch_timeout))
+                    self.sample_listener.start()
 
-        transport = messaging.get_transport(optional=True)
-        if transport:
-            if list(self.meter_manager):
-                sample_target = oslo_messaging.Target(
-                    topic=cfg.CONF.publisher_notifier.metering_topic)
-                self.sample_listener = (
-                    messaging.get_batch_notification_listener(
-                        transport, [sample_target],
-                        [SampleEndpoint(self.meter_manager)],
-                        allow_requeue=True,
-                        batch_size=cfg.CONF.collector.batch_size,
-                        batch_timeout=cfg.CONF.collector.batch_timeout))
-                self.sample_listener.start()
+                if cfg.CONF.notification.store_events and list(self.event_manager):
+                    event_target = oslo_messaging.Target(
+                        topic=cfg.CONF.publisher_notifier.event_topic)
+                    self.event_listener = (
+                        messaging.get_batch_notification_listener(
+                            transport, [event_target],
+                            [EventEndpoint(self.event_manager)],
+                            allow_requeue=True,
+                            batch_size=cfg.CONF.collector.batch_size,
+                            batch_timeout=cfg.CONF.collector.batch_timeout))
+                    self.event_listener.start()
 
-            if cfg.CONF.notification.store_events and list(self.event_manager):
-                event_target = oslo_messaging.Target(
-                    topic=cfg.CONF.publisher_notifier.event_topic)
-                self.event_listener = (
-                    messaging.get_batch_notification_listener(
-                        transport, [event_target],
-                        [EventEndpoint(self.event_manager)],
-                        allow_requeue=True,
-                        batch_size=cfg.CONF.collector.batch_size,
-                        batch_timeout=cfg.CONF.collector.batch_timeout))
-                self.event_listener.start()
-
-            if not cfg.CONF.collector.udp_address:
-                # Add a dummy thread to have wait() working
-                self.tg.add_timer(604800, lambda: None)
+                if not cfg.CONF.collector.udp_address:
+                    # Add a dummy thread to have wait() working
+                    self.tg.add_timer(604800, lambda: None)
 
     def start_udp(self):
         address_family = socket.AF_INET

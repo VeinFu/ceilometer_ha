@@ -1,3 +1,13 @@
+ceilometer (1:6.2.0-1~u14.04+mos38) mos9.0; urgency=medium
+
+  * 为配合计算节点高可用umha，独立于原先ceilometer的collector和compute服务的前提下，
+    新增两个服务ceilometer-collector-ha和ceilometer-polling-ha
+  * remove auto test rule
+  * modify patch format to native
+  * ceilometer extension for compute ha
+
+ -- Fu Chunhui <fuchunhui@umcloud.com>  Thurs, 8 Apr 2019 14:40:21 +0000
+
 ceilometer (1:6.1.5-5~u14.04+mos25) mos9.0; urgency=medium
 
   [ Jenkins ]
